@@ -10,27 +10,276 @@ const TEST_PAGE = `<!doctype html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>WebStats Selfhost Test</title>
+    <title>WebStats Live</title>
     <style>
-      :root { color-scheme: light; }
-      body { font-family: "Segoe UI", Arial, sans-serif; margin: 32px; color: #111; }
-      h1 { margin: 0 0 12px; font-size: 20px; }
-      .row { margin: 6px 0; }
-      code { background: #f6f6f6; padding: 2px 6px; border-radius: 4px; }
-      .note { margin-top: 16px; color: #555; font-size: 13px; }
+      @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap");
+      :root {
+        color-scheme: dark;
+        --bg: #07080f;
+        --bg-2: #0d1326;
+        --ink: #eaf1ff;
+        --muted: #9db0d6;
+        --accent: #7cfbff;
+        --accent-2: #ff77f1;
+        --accent-3: #7b5cff;
+        --glass: rgba(11, 16, 30, 0.72);
+        --stroke: rgba(124, 251, 255, 0.18);
+        --glow: 0 0 30px rgba(124, 251, 255, 0.25), 0 0 80px rgba(123, 92, 255, 0.18);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(900px 600px at 80% -10%, rgba(123, 92, 255, 0.28), transparent 60%),
+          radial-gradient(700px 500px at 0% 0%, rgba(124, 251, 255, 0.22), transparent 60%),
+          radial-gradient(900px 700px at 80% 90%, rgba(255, 119, 241, 0.2), transparent 60%),
+          linear-gradient(150deg, var(--bg), var(--bg-2));
+        overflow-x: hidden;
+        display: grid;
+        place-items: center;
+        padding: 40px 18px 52px;
+      }
+      .aurora {
+        position: fixed;
+        inset: -20% -10% auto -10%;
+        height: 60vh;
+        background:
+          radial-gradient(50% 80% at 20% 30%, rgba(124, 251, 255, 0.35), transparent 70%),
+          radial-gradient(50% 80% at 70% 20%, rgba(255, 119, 241, 0.3), transparent 70%),
+          radial-gradient(50% 80% at 50% 80%, rgba(123, 92, 255, 0.3), transparent 70%);
+        filter: blur(40px) saturate(1.2);
+        animation: drift 14s ease-in-out infinite alternate;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .grid {
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: radial-gradient(circle at 50% 40%, rgba(0,0,0,0.7), transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+      }
+      .shell {
+        width: min(1120px, 100%);
+        display: grid;
+        gap: 18px;
+        position: relative;
+        z-index: 1;
+      }
+      .hero {
+        padding: 26px 30px 22px;
+        border-radius: 20px;
+        border: 1px solid var(--stroke);
+        background: var(--glass);
+        box-shadow: var(--glow);
+        display: grid;
+        gap: 12px;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero::after {
+        content: "";
+        position: absolute;
+        inset: -40% -20% auto auto;
+        width: 360px;
+        height: 360px;
+        background: conic-gradient(from 120deg, transparent, rgba(124, 251, 255, 0.4), transparent 60%);
+        filter: blur(30px);
+        opacity: 0.7;
+        animation: spin 18s linear infinite;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .badge .pulse {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 12px rgba(124, 251, 255, 0.9);
+        animation: pulse 2s ease-in-out infinite;
+      }
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(28px, 4.2vw, 44px);
+        letter-spacing: 0.6px;
+      }
+      .hero p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.7;
+        max-width: 760px;
+      }
+      .cards {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      .card {
+        background: linear-gradient(145deg, rgba(12, 18, 33, 0.9), rgba(7, 10, 20, 0.9));
+        border: 1px solid rgba(124, 251, 255, 0.14);
+        border-radius: 18px;
+        padding: 18px 18px 20px;
+        display: grid;
+        gap: 8px;
+        min-height: 122px;
+        position: relative;
+        overflow: hidden;
+        transform: translateY(10px) scale(0.98);
+        opacity: 0;
+        animation: rise 0.7s ease forwards;
+      }
+      .card:nth-child(2) { animation-delay: 0.08s; }
+      .card:nth-child(3) { animation-delay: 0.16s; }
+      .card:nth-child(4) { animation-delay: 0.24s; }
+      .card:nth-child(5) { animation-delay: 0.32s; }
+      .card:nth-child(6) { animation-delay: 0.4s; }
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: auto 14px 14px auto;
+        width: 72px;
+        height: 72px;
+        background: radial-gradient(circle at 30% 30%, rgba(124, 251, 255, 0.6), transparent 60%);
+        opacity: 0.5;
+        filter: blur(2px);
+      }
+      .card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(120px 80px at 20% 0%, rgba(255, 119, 241, 0.18), transparent 70%);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+      }
+      .card:hover {
+        transform: translateY(0) scale(1);
+        box-shadow: 0 0 35px rgba(124, 251, 255, 0.2);
+      }
+      .card:hover::after { opacity: 1; }
+      .label {
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .value {
+        font-size: 30px;
+        font-weight: 600;
+        text-shadow: 0 0 18px rgba(124, 251, 255, 0.35);
+      }
+      .meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 12px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(10, 14, 24, 0.8);
+        border: 1px solid rgba(123, 92, 255, 0.3);
+        color: var(--muted);
+        font-size: 12px;
+        box-shadow: 0 0 20px rgba(123, 92, 255, 0.18);
+      }
+      .chip code {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        color: var(--accent);
+        font-size: 12px;
+      }
+      .debug {
+        background: rgba(10, 12, 22, 0.7);
+        border: 1px solid rgba(124, 251, 255, 0.14);
+        border-radius: 16px;
+        padding: 16px;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 12px;
+        color: var(--muted);
+        white-space: pre-wrap;
+        box-shadow: inset 0 0 30px rgba(124, 251, 255, 0.08);
+      }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.6; }
+        50% { transform: scale(1.2); opacity: 1; }
+      }
+      @keyframes rise {
+        to { transform: translateY(0) scale(1); opacity: 1; }
+      }
+      @keyframes drift {
+        0% { transform: translateY(0) translateX(0); }
+        100% { transform: translateY(20px) translateX(30px); }
+      }
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @media (max-width: 600px) {
+        .hero { padding: 22px; }
+        .value { font-size: 24px; }
+      }
     </style>
   </head>
   <body>
-    <h1>WebStats Selfhost Test</h1>
-    <div class="row">今日总访问量 <span id="webstats_today_pv">加载中...</span></div>
-    <div class="row">今日总访客数 <span id="webstats_today_uv">加载中...</span></div>
-    <div class="row">本站总访问量 <span id="webstats_site_pv">加载中...</span></div>
-    <div class="row">本站总访客数 <span id="webstats_site_uv">加载中...</span></div>
-    <div class="row">本页总阅读量 <span id="webstats_page_pv">加载中...</span></div>
-    <div class="row">本页总访客数 <span id="webstats_page_uv">加载中...</span></div>
-    <div class="note">脚本地址：<code>/webstats.min.js</code>，API：<code>/api.php</code></div>
-    <div class="note">调试输出：</div>
-    <pre id="webstats_debug">等待 /api.php 响应...</pre>
+    <div class="aurora"></div>
+    <div class="grid"></div>
+    <main class="shell">
+      <section class="hero">
+        <div class="badge"><span class="pulse"></span> WEBSTATS LIVE</div>
+        <h1>\u6570\u636e\u8109\u51b2\u4e2d\u5fc3</h1>
+        <p>这是一个静默运行的统计仪表板，直接展示实时与累计访问数据。</p>
+      </section>
+
+      <section class="cards">
+        <div class="card">
+          <div class="label">\u4eca\u65e5\u603b\u8bbf\u95ee\u91cf</div>
+          <div class="value" id="webstats_today_pv">\u52a0\u8f7d\u4e2d...</div>
+        </div>
+        <div class="card">
+          <div class="label">\u4eca\u65e5\u603b\u8bbf\u5ba2\u6570</div>
+          <div class="value" id="webstats_today_uv">\u52a0\u8f7d\u4e2d...</div>
+        </div>
+        <div class="card">
+          <div class="label">\u5168\u7ad9\u7d2f\u8ba1\u8bbf\u95ee\u91cf</div>
+          <div class="value" id="webstats_site_pv">\u52a0\u8f7d\u4e2d...</div>
+        </div>
+        <div class="card">
+          <div class="label">\u5168\u7ad9\u7d2f\u8ba1\u8bbf\u5ba2\u6570</div>
+          <div class="value" id="webstats_site_uv">\u52a0\u8f7d\u4e2d...</div>
+        </div>
+        <div class="card">
+          <div class="label">\u5f53\u524d\u9875\u9762\u8bbf\u95ee\u91cf</div>
+          <div class="value" id="webstats_page_pv">\u52a0\u8f7d\u4e2d...</div>
+        </div>
+        <div class="card">
+          <div class="label">\u5f53\u524d\u9875\u9762\u8bbf\u5ba2\u6570</div>
+          <div class="value" id="webstats_page_uv">\u52a0\u8f7d\u4e2d...</div>
+        </div>
+      </section>
+
+      <section class="meta">
+        <div class="chip">\u811a\u672c\u5730\u5740 <code>/webstats.min.js</code></div>
+        <div class="chip">API \u5165\u53e3 <code>/api.php</code></div>
+      </section>
+
+      <section class="debug" id="webstats_debug">\u7b49\u5f85 /api.php \u54cd\u5e94...</section>
+    </main>
+
     <script>
       (async () => {
         const debug = document.getElementById("webstats_debug");
@@ -56,7 +305,6 @@ const TEST_PAGE = `<!doctype html>
     </script>
   </body>
 </html>`;
-
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);

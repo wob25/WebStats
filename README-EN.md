@@ -1,78 +1,76 @@
-﻿# WebStats
+# 📊 WebStats
 
-<p align="center">
-  <strong>Self-hosted website traffic statistics</strong><br/>
-  <sub>Cloudflare Worker + D1 / Docker + SQLite</sub>
-</p>
+**Lightweight, Self-hosted Website Analytics Service**  
+Cloudflare Worker + D1 / Docker + SQLite
 
-<p align="center">
-  <img alt="license" src="https://img.shields.io/badge/license-MIT-111827?style=for-the-badge" />
-  <img alt="runtime" src="https://img.shields.io/badge/runtime-Node%2020-2563eb?style=for-the-badge" />
-  <img alt="deploy" src="https://img.shields.io/badge/deploy-Worker%20%7C%20Docker-16a34a?style=for-the-badge" />
-</p>
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Runtime](https://img.shields.io/badge/Runtime-Cloudflare%20Workers-F38020?logo=cloudflare)](https://workers.cloudflare.com/)
+[![Deploy](https://img.shields.io/badge/Deploy-Docker-2496ED?logo=docker)](https://www.docker.com/)
 
-<p align="center">
-  <a href="./README.md">中文</a> | English (current)
-</p>
+[Chinese (current)] | [English](./README-EN.md)
 
 ---
 
-## 1. What this project does
+## 🖼️ Preview
 
-WebStats is a fully self-hosted traffic counter for blogs, docs sites, and static websites.
-
-Endpoints:
-
-- `GET /webstats.min.js`
-- `POST /api.php`
-- `GET /webstats?jsonpCallback=WebStatsCallback&url=...` (optional JSONP)
+![WebStats Preview](%20docs/webstats.jpeg)
 
 ---
 
-## 2. Metrics explained
+## 1. What is this?
+**WebStats** is a self-hosted analytics service suitable for blogs, documentation sites, and static pages.
+
+**Core Interfaces:**
+- `GET /webstats.min.js`: Frontend script integration
+- `POST /api.php`: Analytics API
+- `GET /webstats?jsonpCallback=WebStatsCallback&url=...`: JSONP compatible interface (optional)
+
+---
+
+## 2. Field Meanings (Key)
 
 | Field | Meaning | Scope |
-|---|---|---|
-| `webstats_today_pv` | Page views today | Site-level, current Beijing day |
-| `webstats_today_uv` | Unique visitors today | Site-level, current Beijing day |
-| `webstats_site_pv` | Total page views | Site-level cumulative |
-| `webstats_site_uv` | Total unique visitors | Site-level cumulative |
-| `webstats_page_pv` | Total page views for current page | Current page (path + query) |
-| `webstats_page_uv` | Total unique visitors for current page | Current page (path + query) |
+| :--- | :--- | :--- |
+| `webstats_today_pv` | Today's Page Views (PV) | Current site, based on Beijing time |
+| `webstats_today_uv` | Today's Unique Visitors (UV) | Current site, based on Beijing time |
+| `webstats_site_pv` | Total Site Page Views | Current site, all-time accumulation |
+| `webstats_site_uv` | Total Site Unique Visitors | Current site, all-time accumulation |
+| `webstats_page_pv` | Current Page Page Views | Current page (URL path+query) |
+| `webstats_page_uv` | Current Page Unique Visitors | Current page (URL path+query) |
 
-Notes:
-
-- `pv` increments per request.
-- `uv` is deduplicated by visitor fingerprint (IP + UA hash in current implementation).
-- Daily metrics reset by `Asia/Shanghai` date boundary.
+**Notes:**
+- **pv**: Increases with every request.
+- **uv**: Deduplicated based on visitor fingerprint (IP + UA hash).
+- **"today"** resets at midnight `Asia/Shanghai` time (Beijing time).
 
 ---
 
-## 3. Structure
-
+## 3. Directory Structure
 ```text
 .
-├─ api-worker/
-├─ docker/
-├─ shared/
-├─ webstats.min.js
+├─ api-worker/      # Cloudflare Worker + D1
+├─ docker/          # Docker + SQLite
+├─ shared/          # Shared scripts
+├─  docs/           # Documentation and preview (webstats.jpeg)
+├─ webstats.min.js  # Script entry point
 ├─ README.md
 └─ README-EN.md
 ```
 
 ---
 
-## 4. Cloudflare Worker + D1
+## 4. Worker + D1 Deployment
+Execute in the `api-worker/` directory:
 
 ```bash
-cd api-worker
+wrangler login
 wrangler d1 create webstats
-wrangler d1 execute webstats --remote --file=./schema.sql
+# Record the database_id from the output and fill it into wrangler.jsonc
+wrangler d1 execute webstats --remote --file=./api-worker/schema.sql
 wrangler deploy
 ```
 
-Verify:
-
+**Verification:**
 ```bash
 curl -i "https://your-worker.workers.dev/webstats.min.js"
 curl -i -X POST "https://your-worker.workers.dev/api.php" \
@@ -82,17 +80,15 @@ curl -i -X POST "https://your-worker.workers.dev/api.php" \
 
 ---
 
-## 5. Migrate existing total counts (optional)
+## 5. Migrate Old Site Totals (Optional)
 
-PowerShell:
-
+#### **PowerShell:**
 ```powershell
 $site = "example.com"
 wrangler d1 execute webstats --remote --command "INSERT INTO site_total(site, pv, uv) VALUES ('$site', 13403, 11692) ON CONFLICT(site) DO UPDATE SET pv = excluded.pv, uv = excluded.uv"
 ```
 
-Bash:
-
+#### **Bash:**
 ```bash
 site="example.com"
 wrangler d1 execute webstats --remote --command \
@@ -101,17 +97,14 @@ wrangler d1 execute webstats --remote --command \
 
 ---
 
-## 6. Docker
-
-Build and push:
-
+## 6. Docker Deployment
+**Build and Push:**
 ```bash
 docker login -u <dockerhub-username>
 docker buildx build --no-cache -f docker/Dockerfile -t <dockerhub-username>/webstats:v1.0 --push docker
 ```
 
-Run:
-
+**Run Locally:**
 ```bash
 docker run -d --name webstats \
   -p 8080:8080 \
@@ -119,31 +112,23 @@ docker run -d --name webstats \
   <dockerhub-username>/webstats:v1.0
 ```
 
-Validate:
+---
 
-```bash
-curl -i "http://localhost:8080/"
-curl -i "http://localhost:8080/health"
-curl -i "http://localhost:8080/webstats.min.js"
-```
+## 7. Claw Cloud Parameters
+- **Image**: `<dockerhub-username>/webstats:v1.0`
+- **Port**: `8080`
+- **Replicas**: `1`
+- **Local Storage**: Mount `/data` (**Required**)
+- **Health Check**: `/health` or `/webstats.min.js`
+
+**Note**: If the root path `/` returns 404 but `/webstats.min.js` and `/api.php` work, the tracking functionality is still usable.
 
 ---
 
-## 7. Claw Cloud settings
+## 8. Frontend Integration
+Include the script in your HTML or call it manually:
 
-- Image: `<dockerhub-username>/webstats:v1.0`
-- Port: `8080`
-- Replicas: `1`
-- Local Storage mount: `/data`
-- Health Check: `/health` or `/webstats.min.js`
-
-If `/` is 404 while `/webstats.min.js` and `POST /api.php` work, stats service is still functional.
-
----
-
-## 8. Frontend integration
-
-```js
+```javascript
 fetch('https://your-counter-domain.example/api.php', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -154,26 +139,25 @@ fetch('https://your-counter-domain.example/api.php', {
 })
   .then((res) => res.json())
   .then((data) => {
-    // data.webstats_today_pv
-    // data.webstats_today_uv
-    // data.webstats_site_pv
-    // data.webstats_site_uv
-    // data.webstats_page_pv
-    // data.webstats_page_uv
+    // Auto-fill example:
+    // document.getElementById('webstats_site_pv').innerText = data.webstats_site_pv;
   })
 ```
 
 ---
 
-## Acknowledgements
-
-Thanks to the following platforms for supporting deployment and runtime:
-
-- [Cloudflare](https://www.cloudflare.com/)
-- [Claw Cloud](https://run.claw.cloud/)
+## 9. FAQ
+- **PV increases by 2 per refresh**: Common in development mode with double-execution or redundant reporting logic.
+- **PowerShell command error**: Ensure you use `$site = "..."` syntax; do not mix with Bash format.
+- **insufficient scopes**: Docker Hub PAT lacks permissions; recreate with Read/Write access and log in again.
 
 ---
 
-## License
+## Credits
+Thanks to the following platforms for supporting the deployment and operation of this project:
 
-MIT
+[![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?logo=cloudflare&logoColor=white)](https://www.cloudflare.com/)  
+[![Claw Cloud](https://img.shields.io/badge/Claw%20Cloud-0052D9?logo=cloud&logoColor=white)](https://claw.cloud/)
+
+## License
+[MIT](LICENSE)

@@ -1,15 +1,14 @@
 ﻿{
-	"name": "webstats",
-	"compatibility_date": "2026-02-23",
-	"assets": {
-		"directory": "api-worker"
-	},
-	"d1_databases": [
-		{
-			"binding": "webstats",
-			"database_name": "webstats",
-			"database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
-			"remote": true
-		}
-	]
+  "name": "webstats",
+  "main": "api-worker/src/index.js",
+  "compatibility_date": "2026-02-22",
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "webstats",
+      "database_name": "webstats",
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "remote": true
+    }
+  ]
 }
